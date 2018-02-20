@@ -1,0 +1,70 @@
+﻿#pragma kernel OverlapFrustomAndBounds
+#pragma kernel OverlapFrustomAndSphere
+
+cbuffer Data
+{
+	int resultLength;
+};
+
+Buffer<float4> planes;
+RWBuffer<int> results;
+
+struct Bounds
+{
+	float3 center;
+	float3 extent;
+};
+
+StructuredBuffer<Bounds> bounds;
+
+[numthreads(64,1,1)]
+void OverlapFrustomAndBounds (uint3 id : SV_DispatchThreadID)
+{
+	uint index = id.x;
+
+	if ((uint)resultLength <= index)
+		return;
+
+	Bounds bound = bounds[index];
+	int result = 1;
+
+	[unroll(6)]
+	for (int planeIndex = 0; planeIndex < 6; planeIndex++)
+	{		
+		float4 plane = planes[planeIndex];
+
+		result = result && (dot(bound.center + bound.extent * sign(plane.xyz), plane.xyz) > -plane.w);
+	}
+
+	results[index] = result;
+}
+
+struct Sphere
+{
+	float3 center;
+	float distnace;
+};
+
+StructuredBuffer<Sphere> spheres;
+
+[numthreads(64, 1, 1)]
+void OverlapFrustomAndSphere(uint3 id : SV_DispatchThreadID)
+{
+	uint index = id.x;
+
+	if ((uint)resultLength <= index)
+		return;
+
+	Sphere sphere = spheres[index];
+	int result = 1;
+
+	[unroll(6)]
+	for (int planeIndex = 0; planeIndex < 6; planeIndex++)
+	{
+		float4 plane = planes[planeIndex];
+
+		//result = result && (dot(bound.center + bound.extent * sign(plane.xyz), plane.xyz) > -plane.w);
+	}
+
+	results[index] = result;
+}
